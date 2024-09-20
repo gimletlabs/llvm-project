@@ -6572,6 +6572,7 @@ cc_library(
         "//llvm:MCParser",
         "//llvm:Support",
         "//llvm:TargetParser",
+        "//llvm:AMDGPUAsmParser",
     ],
 )
 
