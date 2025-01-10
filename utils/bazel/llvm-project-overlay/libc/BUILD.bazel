@@ -1513,6 +1513,7 @@ libc_support_library(
         ":__support_str_to_float",
         ":__support_str_to_integer",
     ],
+    includes = ["."],
 )
 
 ############################### errno targets ################################

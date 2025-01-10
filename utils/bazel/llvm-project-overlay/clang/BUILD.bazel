@@ -2695,3 +2695,30 @@ cc_library(
         "//llvm:TargetParser",
     ],
 )
+
+filegroup(
+    name = "headers",
+    srcs = glob(["lib/Headers/*"]),
+    visibility = ["//visibility:public"],
+)
+
+header_dirs =[
+    "cuda_wrappers",
+    "cuda_wrappers/bits",
+    "hlsl",
+    "llvm_libc_wrappers",
+    "llvm_libc_wrappers/llvm-libc-decls",
+    "llvm_offload_wrappers",
+    "openmp_wrappers",
+    "ppc_wrappers",
+    "zos_wrappers",
+]
+
+[
+    filegroup(
+        name = "headers_{}".format(d.replace("/", "_")),
+        srcs = glob(["lib/Headers/{}/*".format(d)]),
+        visibility = ["//visibility:public"],
+    )
+    for d in header_dirs
+]
