@@ -39,12 +39,14 @@ def _libc_library(name, hidden, copts = [], deps = [], local_defines = [], **kwa
     # See src/__support/common.h for more information.
     if hidden:
         copts = copts + ["-fvisibility=hidden"]
+    defines = kwargs.pop("defines", [])
     native.cc_library(
         name = name,
         copts = copts + libc_common_copts(),
         local_defines = local_defines + LIBC_CONFIGURE_OPTIONS,
         deps = deps,
         linkstatic = 1,
+        defines = defines + ["LIBC_NAMESPACE=" + LIBC_NAMESPACE],
         **kwargs
     )
 
