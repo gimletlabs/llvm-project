@@ -429,6 +429,13 @@ __device__ void df_sema() {
   // expected-error@-1 {{initialization is not supported for __shared__ variables}}
   static __constant__ T_FA_NED c_t_fa_ned;
   // expected-error@-1 {{dynamic initialization is not supported for __device__, __constant__, __shared__, and __managed__ variables}}
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcuda-static-var-with-dynamic-init"
+  static __device__ T_FA_NED d_t_fa_ned_ignored;
+  static __shared__ T_FA_NED s_t_fa_ned_ignored;
+  static __constant__ T_FA_NED c_t_fa_ned_ignored;
+#pragma clang diagnostic pop
 }
 
 __host__ __device__ void hd_sema() {
