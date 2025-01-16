@@ -1179,6 +1179,9 @@ public:
   /// the full module.
   OpPrintingFlags &useLocalScope();
 
+  /// Force printing as if this op were at the top level.
+  OpPrintingFlags &forceTopLevel();
+
   /// Print users of values as comments.
   OpPrintingFlags &printValueUsers();
 
@@ -1221,6 +1224,9 @@ public:
   /// Return if printer should use unique SSA IDs.
   bool shouldPrintUniqueSSAIDs() const;
 
+  /// Return if the printer should force top level printing.
+  bool shouldForceTopLevel() const;
+
 private:
   /// Elide large elements attributes if the number of elements is larger than
   /// the upper limit.
@@ -1254,6 +1260,8 @@ private:
 
   /// Print unique SSA IDs for values, block arguments and naming conflicts
   bool printUniqueSSAIDsFlag : 1;
+
+  bool printForceTopLevel : 1;
 };
 
 //===----------------------------------------------------------------------===//

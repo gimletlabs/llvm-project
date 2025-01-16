@@ -296,6 +296,11 @@ OpPrintingFlags &OpPrintingFlags::printValueUsers() {
   return *this;
 }
 
+OpPrintingFlags &OpPrintingFlags::forceTopLevel() {
+  printForceTopLevel = true;
+  return *this;
+}
+
 /// Return if the given ElementsAttr should be elided.
 bool OpPrintingFlags::shouldElideElementsAttr(ElementsAttr attr) const {
   return elementsAttrElementLimit &&
@@ -361,6 +366,8 @@ bool OpPrintingFlags::shouldPrintValueUsers() const {
 bool OpPrintingFlags::shouldPrintUniqueSSAIDs() const {
   return printUniqueSSAIDsFlag || shouldPrintGenericOpForm();
 }
+
+bool OpPrintingFlags::shouldForceTopLevel() const { return printForceTopLevel; }
 
 //===----------------------------------------------------------------------===//
 // NewLineCounter
@@ -3961,7 +3968,7 @@ void Operation::print(raw_ostream &os, const OpPrintingFlags &printerFlags) {
 }
 void Operation::print(raw_ostream &os, AsmState &state) {
   OperationPrinter printer(os, state.getImpl());
-  if (!getParent() && !state.getPrinterFlags().shouldUseLocalScope()) {
+  if (state.getPrinterFlags().shouldForceTopLevel() || (!getParent() && !state.getPrinterFlags().shouldUseLocalScope())) {
     state.getImpl().initializeAliases(this);
     printer.printTopLevelOperation(this);
   } else {
