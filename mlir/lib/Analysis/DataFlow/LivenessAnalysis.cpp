@@ -51,7 +51,8 @@ ChangeResult Liveness::meet(const AbstractSparseLattice &other) {
 /// A value is considered "live" iff it:
 ///   (1) has memory effects OR
 ///   (2) is returned by a public function OR
-///   (3) is used to compute a value of type (1) or (2).
+///   (2.b) is a block argument of a public function OR
+///   (3) is used to compute a value of type (1), (2) or (2.b)
 /// It is also to be noted that a value could be of multiple types (1/2/3) at
 /// the same time.
 ///
@@ -89,6 +90,20 @@ LivenessAnalysis::visitOperation(Operation *op, ArrayRef<Liveness *> operands,
     }
     addDependency(const_cast<Liveness *>(r), getProgramPointAfter(op));
   }
+
+  // This marks values of type (2.b) liveness as "live".
+  if (auto callable = dyn_cast<CallableOpInterface>(op)) {
+    auto symbol = dyn_cast<SymbolOpInterface>(op);
+    if (symbol && symbol.isPublic()) {
+      auto *region = callable.getCallableRegion();
+      if (region && !region->empty())
+        for (auto arg : region->front().getArguments()) {
+          auto latticeElement = getLatticeElement(arg);
+          propagateIfChanged(latticeElement, latticeElement->markLive());
+        }
+    }
+  }
+
   return success();
 }
 
