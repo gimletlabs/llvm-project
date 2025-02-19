@@ -44,6 +44,8 @@ enum class CudaVersion {
   CUDA_124,
   CUDA_125,
   CUDA_126,
+  CUDA_127,
+  CUDA_128,
   FULLY_SUPPORTED = CUDA_123,
   PARTIALLY_SUPPORTED =
       CUDA_126, // Partially supported. Proceed with a warning.
@@ -80,6 +82,11 @@ enum class OffloadArch {
   SM_90,
   SM_90a,
   SM_100,
+  SM_100a,
+  SM_101,
+  SM_101a,
+  SM_120,
+  SM_120a,
   GFX600,
   GFX601,
   GFX602,
