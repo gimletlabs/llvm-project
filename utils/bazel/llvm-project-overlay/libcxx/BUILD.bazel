@@ -192,7 +192,7 @@ expand_template(
 [
     filegroup(
         name = "{}_headers".format(d.replace("/", "_")),
-        srcs = glob(["include/{}/*".format(d)]),
+        srcs = glob(["include/{}/**".format(d)]),
         visibility = ["//visibility:public"],
     )
     for d in [
@@ -246,7 +246,18 @@ expand_template(
 
 filegroup(
     name = "top_level_headers",
-    srcs = glob(["include/*"], exclude=["include/CMakeLists.txt"]),
+    srcs = glob(
+        [
+            "include/*",
+        ],
+        exclude = [
+            "include/**/CMakeLists.txt",
+            "include/__config_site.in",
+        ],
+    ) + [
+        ":__assertion_handler_gen",
+        ":__config_site_gen",
+    ],
     visibility = ["//visibility:public"],
 )
 
