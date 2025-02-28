@@ -9,108 +9,6 @@ package(
 
 licenses(["notice"])
 
-cc_library(
-    name = "config",
-    defines = select({
-        "@platforms//os:linux": [
-            "COMPILER_RT_HAS_ATOMICS=1",
-            "COMPILER_RT_HAS_FCNTL_LCK=1",
-            "COMPILER_RT_HAS_UNAME=1",
-        ],
-        # Will raise error unless supported platforms.
-    }),
-    target_compatible_with = select({
-        "@platforms//os:linux": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
-)
-
-WIN32_ONLY_FILES = [
-    "lib/profile/WindowsMMap.c",
-]
-
-cc_library(
-    name = "profile",
-    srcs = glob(
-        [
-            "lib/profile/*.c",
-            "lib/profile/*.cpp",
-            "lib/profile/*.h",
-        ],
-        exclude = WIN32_ONLY_FILES,
-    ) + select({
-        "@platforms//os:windows": WIN32_ONLY_FILES,
-        "//conditions:default": [],
-    }),
-    hdrs = glob([
-        "include/profile/*.h",
-        "include/profile/*.inc",
-    ]),
-    includes = [
-        "include",
-    ],
-    linkstatic = True,
-    deps = [
-        ":config",
-    ],
-)
-
-cc_library(
-    name = "orc_rt_common_headers",
-    hdrs = [
-        "lib/orc/adt.h",
-        "lib/orc/bitmask_enum.h",
-        "lib/orc/common.h",
-        "lib/orc/compiler.h",
-        "lib/orc/debug.h",
-        "lib/orc/endianness.h",
-        "lib/orc/error.h",
-        "lib/orc/executor_address.h",
-        "lib/orc/executor_symbol_def.h",
-        "lib/orc/extensible_rtti.h",
-        "lib/orc/interval_map.h",
-        "lib/orc/interval_set.h",
-        "lib/orc/jit_dispatch.h",
-        "lib/orc/record_section_tracker.h",
-        "lib/orc/simple_packed_serialization.h",
-        "lib/orc/stl_extras.h",
-        "lib/orc/string_pool.h",
-        "lib/orc/wrapper_function_utils.h",
-    ],
-    strip_include_prefix = "lib/orc",
-)
-
-cc_library(
-    name = "orc_rt",
-    srcs = [
-        "lib/orc/debug.cpp",
-        "lib/orc/dlfcn_wrapper.cpp",
-        "lib/orc/extensible_rtti.cpp",
-        "lib/orc/log_error_to_stderr.cpp",
-        "lib/orc/run_program_wrapper.cpp",
-    ] + select({
-        "@platforms//os:macos": [
-            "lib/orc/macho_platform.cpp",
-            "lib/orc/macho_platform.h",
-            "lib/orc/macho_tlv.arm64.S",
-            "lib/orc/macho_tlv.x86-64.S",
-        ],
-        "@platforms//os:linux": [
-            "lib/orc/elfnix_platform.cpp",
-            "lib/orc/elfnix_platform.h",
-            "lib/orc/elfnix_tls.aarch64.S",
-            "lib/orc/elfnix_tls.ppc64.S",
-            "lib/orc/elfnix_tls.x86-64.S",
-        ],
-    }),
-    hdrs = glob(["include/orc_rt/*.h"]),
-    includes = ["include"],
-    linkstatic = True,
-    deps = [
-        ":orc_rt_common_headers",
-    ],
-)
-
 filegroup(
     name = "fuzzer_hdrs",
     srcs = glob(["include/fuzzer/*"]),
@@ -134,12 +32,6 @@ filegroup(
 filegroup(
     name = "xray_hdrs",
     srcs = glob(["include/xray/*"]),
-)
-
-cc_library(
-    name = "compiler_rt_hdrs",
-    hdrs = glob(["include/**/*"]),
-    includes = ["compiler_rt/include"],
 )
 
 filegroup(
@@ -230,27 +122,17 @@ filegroup(
 )
 
 cc_library(
-    name = "RTAsan_dynamic",
-    srcs = [
-        ":asan_cxx_sources",
-        ":asan_sources",
-    ],
-    hdrs = [
-        ":asan_headers",
-        ":interception_headers",
-        ":lsan_headers",
-        ":sanitizer_impl_headers",
-        ":ubsan_headers",
-    ],
-    defines = ["ASAN_DYNAMIC=1"],
-    includes = ["lib"],
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
-    name = "RTAsan",
+    name = "clang_rt.asan",
     srcs = [
         ":asan_sources",
+        ":asan_preinit_sources",
+        ":interception_sources",
+        ":lsan_sources",
+        ":ubsan_sources",
+        ":sanitizer_common_sources",
+        ":sanitizer_common_libc_sources",
+        ":sanitizer_common_coverage_sources",
+        ":sanitizer_common_symbolizer_sources",
     ],
     hdrs = [
         ":asan_headers",
@@ -261,27 +143,31 @@ cc_library(
     ],
     includes = ["lib"],
     visibility = ["//visibility:public"],
+    linkstatic = True,
 )
 
 cc_library(
-    name = "RTAsan_cxx",
+    name = "clang_rt.asan_cxx",
     srcs = [
         ":asan_cxx_sources",
+        ":ubsan_cxx_sources",
     ],
     hdrs = [
         ":asan_headers",
         ":interception_headers",
+        ":lsan_headers",
         ":sanitizer_impl_headers",
+        ":ubsan_headers",
     ],
     includes = ["lib"],
     visibility = ["//visibility:public"],
+    linkstatic = True,
 )
 
 cc_library(
-    name = "RTAsan_static",
+    name = "clang_rt.asan_static",
     srcs = [
-        "lib/asan/asan_rtl_static.cpp",
-        "lib/asan/asan_rtl_x86_64.S",  # Not Win32 and not Apple.
+        ":asan_static_sources",
     ],
     hdrs = [
         ":asan_headers",
@@ -289,10 +175,11 @@ cc_library(
     ],
     includes = ["lib"],
     visibility = ["//visibility:public"],
+    linkstatic = True,
 )
 
 cc_library(
-    name = "RTAsan_preinit",
+    name = "clang_rt.asan-preinit",
     srcs = [
         ":asan_preinit_sources",
     ],
@@ -302,68 +189,7 @@ cc_library(
     ],
     includes = ["lib"],
     visibility = ["//visibility:public"],
-)
-
-cc_library(
-    name = "clang_rt.asan",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":RTAsan",
-        ":RTAsan_preinit",
-        ":RTInterception",
-        ":RTLSanCommon",
-        ":RTSanitizerCommon",
-        ":RTSanitizerCommonCoverage",
-        ":RTSanitizerCommonLibc",
-        ":RTSanitizerCommonSymbolizer",
-        ":RTUbsan",
-    ],
-)
-
-cc_library(
-    # We want the output library to be named libasan.so. Otherwise it will not
-    # be recognized by IsDynamicRTName in asan_linux.cpp.
-    name = "libasan",
-    linkopts = [
-        "--eh-frame-hdr",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        ":RTAsan_dynamic",
-        ":RTInterception",
-        ":RTLSanCommon",
-        ":RTSanitizerCommon",
-        ":RTSanitizerCommonCoverage",
-        ":RTSanitizerCommonLibc",
-        ":RTSanitizerCommonSymbolizer",
-        ":RTUbsan",
-        ":RTUbsan_cxx",
-    ],
-)
-
-cc_library(
-    name = "clang_rt.asan_cxx",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":RTAsan_cxx",
-        ":RTUbsan_cxx",
-    ],
-)
-
-cc_library(
-    name = "clang_rt.asan_static",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":RTAsan_static",
-    ],
-)
-
-cc_library(
-    name = "clang_rt.asan-preinit",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":RTAsan_preinit",
-    ],
+    linkstatic = True,
 )
 
 GENERIC_SOURCES = [
@@ -562,35 +388,48 @@ X86_64_SOURCES = GENERIC_SOURCES + GENERIC_TF_SOURCES + X86_ARCH_SOURCES + X86_8
     "lib/builtins/x86_64/floatundixf.S",
 ]
 
+BUILTINS_HEADERS = [
+    "lib/builtins/assembly.h",
+    "lib/builtins/cpu_model/cpu_model.h",
+    "lib/builtins/fp_add_impl.inc",
+    "lib/builtins/fp_compare_impl.inc",
+    "lib/builtins/fp_div_impl.inc",
+    "lib/builtins/fp_extend.h",
+    "lib/builtins/fp_extend_impl.inc",
+    "lib/builtins/fp_fixint_impl.inc",
+    "lib/builtins/fp_fixuint_impl.inc",
+    "lib/builtins/fp_lib.h",
+    "lib/builtins/fp_mode.h",
+    "lib/builtins/fp_mul_impl.inc",
+    "lib/builtins/fp_trunc.h",
+    "lib/builtins/fp_trunc_impl.inc",
+    "lib/builtins/int_div_impl.inc",
+    "lib/builtins/int_endianness.h",
+    "lib/builtins/int_lib.h",
+    "lib/builtins/int_math.h",
+    "lib/builtins/int_mulo_impl.inc",
+    "lib/builtins/int_mulv_impl.inc",
+    "lib/builtins/int_to_fp.h",
+    "lib/builtins/int_to_fp_impl.inc",
+    "lib/builtins/int_types.h",
+    "lib/builtins/int_util.h",
+]
+
 cc_library(
     name = "builtins",
     srcs = X86_64_SOURCES,
-    hdrs = [
-        "lib/builtins/assembly.h",
-        "lib/builtins/cpu_model/cpu_model.h",
-        "lib/builtins/fp_add_impl.inc",
-        "lib/builtins/fp_compare_impl.inc",
-        "lib/builtins/fp_div_impl.inc",
-        "lib/builtins/fp_extend.h",
-        "lib/builtins/fp_extend_impl.inc",
-        "lib/builtins/fp_fixint_impl.inc",
-        "lib/builtins/fp_fixuint_impl.inc",
-        "lib/builtins/fp_lib.h",
-        "lib/builtins/fp_mode.h",
-        "lib/builtins/fp_mul_impl.inc",
-        "lib/builtins/fp_trunc.h",
-        "lib/builtins/fp_trunc_impl.inc",
-        "lib/builtins/int_div_impl.inc",
-        "lib/builtins/int_endianness.h",
-        "lib/builtins/int_lib.h",
-        "lib/builtins/int_math.h",
-        "lib/builtins/int_mulo_impl.inc",
-        "lib/builtins/int_mulv_impl.inc",
-        "lib/builtins/int_to_fp.h",
-        "lib/builtins/int_to_fp_impl.inc",
-        "lib/builtins/int_types.h",
-        "lib/builtins/int_util.h",
-    ],
+    hdrs = BUILTINS_HEADERS,
+    includes = ["lib"],
+    linkstatic = True,
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "clang_rt.builtins",
+    srcs = X86_64_SOURCES,
+    hdrs = BUILTINS_HEADERS,
+    includes = ["lib"],
+    linkstatic = True,
     visibility = ["//visibility:public"],
 )
 
@@ -598,18 +437,21 @@ cc_library(
     name = "crtbegin",
     srcs = ["lib/builtins/crtbegin.c"],
     defines = ["EH_USE_FRAME_REGISTRY"],
+    linkstatic = True,
     visibility = ["//visibility:public"],
 )
 
 cc_library(
     name = "crtend",
     srcs = ["lib/builtins/crtend.c"],
+    linkstatic = True,
     visibility = ["//visibility:public"],
 )
 
 cc_library(
     name = "crt",
     visibility = ["//visibility:public"],
+    linkstatic = True,
     deps = [
         ":crtbegin",
         ":crtend",
@@ -627,19 +469,14 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-cc_library(
-    name = "RTInterception",
+filegroup(
+    name = "interception_sources",
     srcs = [
         "lib/interception/interception_linux.cpp",
         "lib/interception/interception_mac.cpp",
         "lib/interception/interception_type_test.cpp",
         "lib/interception/interception_win.cpp",
     ],
-    hdrs = [
-        ":interception_headers",
-        ":sanitizer_impl_headers",
-    ],
-    includes = ["lib"],
     visibility = ["//visibility:public"],
 )
 
@@ -656,19 +493,14 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-cc_library(
-    name = "RTLSanCommon",
+filegroup(
+    name = "lsan_sources",
     srcs = [
         "lib/lsan/lsan_common.cpp",
         "lib/lsan/lsan_common_fuchsia.cpp",
         "lib/lsan/lsan_common_linux.cpp",
         "lib/lsan/lsan_common_mac.cpp",
     ],
-    hdrs = [
-        ":lsan_headers",
-        ":sanitizer_impl_headers",
-    ],
-    includes = ["lib"],
     visibility = ["//visibility:public"],
 )
 
@@ -685,6 +517,12 @@ cc_library(
         "lib/lsan/lsan_posix.cpp",
         "lib/lsan/lsan_preinit.cpp",
         "lib/lsan/lsan_thread.cpp",
+        ":interception_sources",
+        ":lsan_sources",
+        ":sanitizer_common_sources",
+        ":sanitizer_common_libc_sources",
+        ":sanitizer_common_coverage_sources",
+        ":sanitizer_common_symbolizer_sources",
     ],
     hdrs = [
         ":interception_headers",
@@ -693,14 +531,7 @@ cc_library(
     ],
     includes = ["lib"],
     visibility = ["//visibility:public"],
-    deps = [
-        ":RTInterception",
-        ":RTLSanCommon",
-        ":RTSanitizerCommon",
-        ":RTSanitizerCommonCoverage",
-        ":RTSanitizerCommonLibc",
-        ":RTSanitizerCommonSymbolizer",
-    ],
+    linkstatic = True,
 )
 
 filegroup(
@@ -733,6 +564,12 @@ cc_library(
         "lib/msan/msan_poisoning.cpp",
         "lib/msan/msan_report.cpp",
         "lib/msan/msan_thread.cpp",
+        ":interception_sources",
+        ":ubsan_sources",
+        ":sanitizer_common_sources",
+        ":sanitizer_common_libc_sources",
+        ":sanitizer_common_coverage_sources",
+        ":sanitizer_common_symbolizer_sources",
     ],
     hdrs = [
         ":interception_headers",
@@ -742,20 +579,14 @@ cc_library(
     ],
     includes = ["lib"],
     visibility = ["//visibility:public"],
-    deps = [
-        ":RTInterception",
-        ":RTSanitizerCommon",
-        ":RTSanitizerCommonCoverage",
-        ":RTSanitizerCommonLibc",
-        ":RTSanitizerCommonSymbolizer",
-        ":RTUbsan",
-    ],
+    linkstatic = True,
 )
 
 cc_library(
     name = "clang_rt.msan_cxx",
     srcs = [
         "lib/msan/msan_new_delete.cpp",
+        ":ubsan_cxx_sources",
     ],
     hdrs = [
         ":interception_headers",
@@ -765,30 +596,7 @@ cc_library(
     ],
     includes = ["lib"],
     visibility = ["//visibility:public"],
-    deps = [
-        ":RTUbsan_cxx",
-    ],
-)
-
-cc_library(
-    name = "clang_rt.profile",
-    srcs = glob([
-        "lib/profile/*.c",
-    ]),
-    hdrs = glob([
-        "lib/profile/*.h",
-    ]),
-    defines = [
-        "COMPILER_RT_HAS_UNAME=1",
-        "COMPILER_RT_HAS_FCNTL_LCK=1",
-        "COMPILER_RT_HAS_ATOMICS=1",
-    ],
-    includes = [
-        "compiler-rt/include",
-        "lib",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [":compiler_rt_hdrs"],
+    linkstatic = True,
 )
 
 filegroup(
@@ -801,8 +609,8 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-cc_library(
-    name = "RTSanitizerCommon",
+filegroup(
+    name = "sanitizer_common_sources",
     srcs = [
         "lib/sanitizer_common/sanitizer_allocator.cpp",
         "lib/sanitizer_common/sanitizer_common.cpp",
@@ -841,6 +649,7 @@ cc_library(
         "lib/sanitizer_common/sanitizer_suppressions.cpp",
         "lib/sanitizer_common/sanitizer_tls_get_addr.cpp",
         "lib/sanitizer_common/sanitizer_thread_arg_retval.cpp",
+        "lib/sanitizer_common/sanitizer_thread_history.cpp",
         "lib/sanitizer_common/sanitizer_thread_registry.cpp",
         "lib/sanitizer_common/sanitizer_type_traits.cpp",
         "lib/sanitizer_common/sanitizer_win.cpp",
@@ -849,23 +658,17 @@ cc_library(
         # Always termination.
         "lib/sanitizer_common/sanitizer_termination.cpp",
     ],
-    hdrs = [":sanitizer_impl_headers"],
-    includes = ["lib"],
-    visibility = ["//visibility:public"],
 )
 
-cc_library(
-    name = "RTSanitizerCommonNoLibc",
+filegroup(
+    name = "sanitizer_common_no_libc_sources",
     srcs = [
         "lib/sanitizer_common/sanitizer_common_nolibc.cpp",
     ],
-    hdrs = [":sanitizer_impl_headers"],
-    includes = ["lib"],
-    visibility = ["//visibility:public"],
 )
 
-cc_library(
-    name = "RTSanitizerCommonLibc",
+filegroup(
+    name = "sanitizer_common_libc_sources",
     srcs = [
         "lib/sanitizer_common/sanitizer_allocator_checks.cpp",
         "lib/sanitizer_common/sanitizer_common_libcdep.cpp",
@@ -876,26 +679,20 @@ cc_library(
         "lib/sanitizer_common/sanitizer_stoptheworld_linux_libcdep.cpp",
         "lib/sanitizer_common/sanitizer_stoptheworld_netbsd_libcdep.cpp",
     ],
-    hdrs = [":sanitizer_impl_headers"],
-    includes = ["lib"],
-    visibility = ["//visibility:public"],
 )
 
-cc_library(
-    name = "RTSanitizerCommonCoverage",
+filegroup(
+    name = "sanitizer_common_coverage_sources",
     srcs = [
         "lib/sanitizer_common/sancov_flags.cpp",
         "lib/sanitizer_common/sanitizer_coverage_fuchsia.cpp",
         "lib/sanitizer_common/sanitizer_coverage_libcdep_new.cpp",
         "lib/sanitizer_common/sanitizer_coverage_win_sections.cpp",
     ],
-    hdrs = [":sanitizer_impl_headers"],
-    includes = ["lib"],
-    visibility = ["//visibility:public"],
 )
 
-cc_library(
-    name = "RTSanitizerCommonSymbolizer",
+filegroup(
+    name = "sanitizer_common_symbolizer_sources",
     srcs = [
         "lib/sanitizer_common/sanitizer_allocator_report.cpp",
         "lib/sanitizer_common/sanitizer_chained_origin_depot.cpp",
@@ -919,9 +716,6 @@ cc_library(
         "lib/sanitizer_common/sanitizer_unwind_linux_libcdep.cpp",
         "lib/sanitizer_common/sanitizer_unwind_win.cpp",
     ],
-    hdrs = [":sanitizer_impl_headers"],
-    includes = ["lib"],
-    visibility = ["//visibility:public"],
 )
 
 filegroup(
@@ -996,6 +790,12 @@ cc_library(
         # Linux sources.
         "lib/tsan/rtl/tsan_platform_linux.cpp",
         "lib/tsan/rtl/tsan_platform_posix.cpp",
+        ":interception_sources",
+        ":ubsan_sources",
+        ":sanitizer_common_sources",
+        ":sanitizer_common_libc_sources",
+        ":sanitizer_common_coverage_sources",
+        ":sanitizer_common_symbolizer_sources",
     ],
     hdrs = [
         ":interception_headers",
@@ -1005,20 +805,14 @@ cc_library(
     ],
     includes = ["lib"],
     visibility = ["//visibility:public"],
-    deps = [
-        ":RTInterception",
-        ":RTSanitizerCommon",
-        ":RTSanitizerCommonCoverage",
-        ":RTSanitizerCommonLibc",
-        ":RTSanitizerCommonSymbolizer",
-        ":RTUbsan",
-    ],
+    linkstatic = True,
 )
 
 cc_library(
     name = "clang_rt.tsan_cxx",
     srcs = [
         "lib/tsan/rtl/tsan_new_delete.cpp",
+        ":ubsan_cxx_sources",
     ],
     hdrs = [
         ":interception_headers",
@@ -1028,9 +822,7 @@ cc_library(
     ],
     includes = ["lib"],
     visibility = ["//visibility:public"],
-    deps = [
-        ":RTUbsan_cxx",
-    ],
+    linkstatic = True,
 )
 
 filegroup(
@@ -1053,8 +845,8 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-cc_library(
-    name = "RTUbsan",
+filegroup(
+    name = "ubsan_sources",
     srcs = [
         "lib/ubsan/ubsan_diag.cpp",
         "lib/ubsan/ubsan_flags.cpp",
@@ -1063,39 +855,40 @@ cc_library(
         "lib/ubsan/ubsan_monitor.cpp",
         "lib/ubsan/ubsan_value.cpp",
     ],
-    hdrs = [
-        ":sanitizer_impl_headers",
-        ":ubsan_headers",
-    ],
-    defines = [
-        "UBSAN_CAN_USE_CXXABI",
-    ],
-    includes = ["lib"],
     visibility = ["//visibility:public"],
 )
 
-cc_library(
-    name = "RTUbsan_cxx",
+filegroup(
+    name = "ubsan_cxx_sources",
     srcs = [
         "lib/ubsan/ubsan_handlers_cxx.cpp",
         "lib/ubsan/ubsan_type_hash.cpp",
         "lib/ubsan/ubsan_type_hash_itanium.cpp",
         "lib/ubsan/ubsan_type_hash_win.cpp",
     ],
-    hdrs = [
-        ":sanitizer_impl_headers",
-        ":ubsan_headers",
-    ],
-    includes = ["lib"],
     visibility = ["//visibility:public"],
 )
 
-cc_library(
-    name = "RTUbsan_standalone",
+filegroup(
+    name = "ubsan_standalone_sources",
     srcs = [
         "lib/ubsan/ubsan_diag_standalone.cpp",
         "lib/ubsan/ubsan_init_standalone.cpp",
         "lib/ubsan/ubsan_signals_standalone.cpp",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "clang_rt.ubsan_standalone",
+    srcs = [
+        "lib/ubsan/ubsan_init_standalone_preinit.cpp",
+        ":ubsan_standalone_sources",
+        ":interception_sources",
+        ":sanitizer_common_sources",
+        ":sanitizer_common_libc_sources",
+        ":sanitizer_common_coverage_sources",
+        ":sanitizer_common_symbolizer_sources",
     ],
     hdrs = [
         ":interception_headers",
@@ -1104,36 +897,24 @@ cc_library(
     ],
     includes = ["lib"],
     visibility = ["//visibility:public"],
+    linkstatic = True,
 )
 
 cc_library(
-    name = "clang_rt.ubsan_standalone",
+    name = "clang_rt.ubsan_standalone_cxx",
     srcs = [
+        ":ubsan_cxx_sources",
+        ":ubsan_standalone_sources",
         "lib/ubsan/ubsan_init_standalone_preinit.cpp",
     ],
     hdrs = [
+        ":interception_headers",
         ":sanitizer_impl_headers",
         ":ubsan_headers",
     ],
     includes = ["lib"],
     visibility = ["//visibility:public"],
-    deps = [
-        ":RTInterception",
-        ":RTSanitizerCommon",
-        ":RTSanitizerCommonCoverage",
-        ":RTSanitizerCommonLibc",
-        ":RTSanitizerCommonSymbolizer",
-        ":RTUbsan",
-        ":RTUbsan_standalone",
-    ],
-)
-
-cc_library(
-    name = "clang_rt.ubsan_standalone_cxx",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":RTUbsan_cxx",
-    ],
+    linkstatic = True,
 )
 
 filegroup(
