@@ -175,7 +175,7 @@ static SmallVector<OpOperand *> operandsToOpOperands(OperandRange operands) {
 /// symbol op, a symbol-user op, a region branch op, a branch op, a region
 /// branch terminator op, or return-like.
 static void cleanSimpleOp(Operation *op, RunLivenessAnalysis &la) {
-  if (!isMemoryEffectFree(op) || hasLive(op->getResults(), la))
+  if (hasLive(op->getResults(), la))
     return;
 
   op->dropAllUses();
