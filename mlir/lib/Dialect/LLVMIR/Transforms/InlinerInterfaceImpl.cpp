@@ -327,8 +327,12 @@ static void createNewAliasScopesFromNoAliasParameter(
             getUnderlyingObjectSet(pointer);
         if (failed(underlyingObjectSet))
           return;
-        llvm::copy(*underlyingObjectSet,
-                   std::inserter(basedOnPointers, basedOnPointers.begin()));
+        // Switched from llvm::copy(*underlyingObjectSet,
+        // std::inserter(basedonPointers, ...)) to support libstdc++10 and
+        // C++20. We need to support this so that python bindings can be built
+        // with widely compatible versions of glibc.
+        for (Value v : *underlyingObjectSet)
+          basedOnPointers.insert(v);
       }
 
       bool aliasesOtherKnownObject = false;
