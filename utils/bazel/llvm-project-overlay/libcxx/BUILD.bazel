@@ -1,0 +1,448 @@
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+
+STD_PARTITIONS = [
+    "algorithm",
+    "any",
+    "array",
+    "atomic",
+    "barrier",
+    "bit",
+    "bitset",
+    "cassert",
+    "cctype",
+    "cerrno",
+    "cfenv",
+    "cfloat",
+    "charconv",
+    "chrono",
+    "cinttypes",
+    "climits",
+    "clocale",
+    "cmath",
+    "codecvt",
+    "compare",
+    "complex",
+    "concepts",
+    "condition_variable",
+    "coroutine",
+    "csetjmp",
+    "csignal",
+    "cstdarg",
+    "cstddef",
+    "cstdio",
+    "cstdlib",
+    "cstdint",
+    "cstring",
+    "ctime",
+    "cuchar",
+    "cwchar",
+    "cwctype",
+    "deque",
+    "exception",
+    "execution",
+    # "expected", # TODO(aaronmondal): This clashes with exception. It should
+    # work, but somehow this buildfile is misconfigured.
+    "filesystem",
+    "flat_map",
+    "flat_set",
+    "format",
+    "forward_list",
+    "fstream",
+    "functional",
+    "future",
+    "generator",
+    "hazard_pointer",
+    "initializer_list",
+    "iomanip",
+    "ios",
+    "iosfwd",
+    "iostream",
+    "istream",
+    "iterator",
+    "latch",
+    "limits",
+    "list",
+    "locale",
+    "map",
+    "mdspan",
+    "memory",
+    "memory_resource",
+    "mutex",
+    "new",
+    "numbers",
+    "numeric",
+    "optional",
+    "ostream",
+    "print",
+    "queue",
+    "random",
+    "ranges",
+    "ratio",
+    "rcu",
+    "regex",
+    "scoped_allocator",
+    "semaphore",
+    "set",
+    "shared_mutex",
+    "source_location",
+    "span",
+    "spanstream",
+    "sstream",
+    "stack",
+    "stacktrace",
+    "stdexcept",
+    "stdfloat",
+    "stop_token",
+    "streambuf",
+    "string",
+    "string_view",
+    "strstream",
+    "syncstream",
+    "system_error",
+    "text_encoding",
+    "thread",
+    "tuple",
+    "typeindex",
+    "typeinfo",
+    "type_traits",
+    "unordered_map",
+    "unordered_set",
+    "utility",
+    "valarray",
+    "variant",
+    "vector",
+    "version",
+]
+
+# Added to the list of private headers during libcxx compilation.
+LIBCXX_MODULE_STD_INCLUDE_SOURCES_FILES = [
+    "modules/std/{}.inc".format(name)
+    for name in STD_PARTITIONS
+]
+
+# Substituted in std.cppm.in to generate std.cppm.
+LIBCXX_MODULE_STD_INCLUDE_SOURCES = "\n".join([
+    '#include "{}"'.format(file)
+    for file in LIBCXX_MODULE_STD_INCLUDE_SOURCES_FILES
+])
+
+copy_file(
+    name = "__assertion_handler_gen",
+    src = "vendor/llvm/default_assertion_handler.in",
+    out = "include/__assertion_handler",
+)
+
+expand_template(
+    name = "std.cppm",
+    out = "modules/std.cppm",
+    substitutions = {
+        "@LIBCXX_MODULE_STD_INCLUDE_SOURCES@": LIBCXX_MODULE_STD_INCLUDE_SOURCES,
+    },
+    template = "modules/std.cppm.in",
+)
+
+NO = "/* Undefined by Bazel. */"
+
+expand_template(
+    name = "__config_site_gen",
+    out = "include/__config_site",
+    substitutions = {
+        "#cmakedefine01 {}".format(name): "#define {} {}".format(name, value)
+        for name, value in {
+            "_LIBCPP_ABI_FORCE_ITANIUM": "0",
+            "_LIBCPP_ABI_FORCE_MICROSOFT": "0",
+            "_LIBCPP_HAS_THREADS": "1",
+            "_LIBCPP_HAS_MONOTONIC_CLOCK": "1",
+            "_LIBCPP_HAS_MUSL_LIBC": "0",
+            "_LIBCPP_HAS_THREAD_API_PTHREAD": "1",
+            "_LIBCPP_HAS_THREAD_API_EXTERNAL": "0",
+            "_LIBCPP_HAS_THREAD_API_WIN32": "0",
+            "_LIBCPP_HAS_VENDOR_AVAILABILITY_ANNOTATIONS": "0",
+            "_LIBCPP_HAS_FILESYSTEM": "1",
+            "_LIBCPP_HAS_RANDOM_DEVICE": "1",
+            "_LIBCPP_HAS_LOCALIZATION": "1",
+            "_LIBCPP_HAS_UNICODE": "1",
+            "_LIBCPP_HAS_WIDE_CHARACTERS": "1",
+            "_LIBCPP_HAS_TIME_ZONE_DATABASE": "1",
+            "_LIBCPP_INSTRUMENTED_WITH_ASAN": "0",
+            # C library selection (glibc, not the alternatives).
+            "_LIBCPP_LIBC_PICOLIBC": "0",
+            "_LIBCPP_LIBC_NEWLIB": "0",
+            "_LIBCPP_LIBC_LLVM_LIBC": "0",
+        }.items()
+    } | {
+        "#cmakedefine _LIBCPP_ABI_VERSION @_LIBCPP_ABI_VERSION@": "#define _LIBCPP_ABI_VERSION 1",
+        "#cmakedefine _LIBCPP_ABI_NAMESPACE @_LIBCPP_ABI_NAMESPACE@": "#define _LIBCPP_ABI_NAMESPACE __1",
+        "#cmakedefine _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS": NO,
+        "#cmakedefine _LIBCPP_NO_VCRUNTIME": NO,
+        "#cmakedefine _LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION @_LIBCPP_TYPEINFO_COMPARISON_IMPLEMENTATION@": NO,
+        # PSTL backends.
+        "#cmakedefine _LIBCPP_PSTL_BACKEND_SERIAL": "#define _LIBCPP_PSTL_BACKEND_SERIAL",
+        "#cmakedefine _LIBCPP_PSTL_BACKEND_STD_THREAD": NO,
+        "#cmakedefine _LIBCPP_PSTL_BACKEND_LIBDISPATCH": NO,
+        # Hardening.
+        # TODO: Evaluate performance impact of this. If it isn't noticeable for
+        #       most use-cases, enable it.
+        "#cmakedefine _LIBCPP_HARDENING_MODE_DEFAULT @_LIBCPP_HARDENING_MODE_DEFAULT@": "#define _LIBCPP_HARDENING_MODE_DEFAULT _LIBCPP_HARDENING_MODE_NONE",
+        "#cmakedefine _LIBCPP_ASSERTION_SEMANTIC_DEFAULT @_LIBCPP_ASSERTION_SEMANTIC_DEFAULT@": "#define _LIBCPP_ASSERTION_SEMANTIC_DEFAULT _LIBCPP_ASSERTION_SEMANTIC_HARDENING_DEPENDENT",
+        "@_LIBCPP_ABI_DEFINES@": NO,
+        "@_LIBCPP_EXTRA_SITE_DEFINES@": NO,
+    },
+    template = "include/__config_site.in",
+)
+
+[
+    filegroup(
+        name = "{}_headers".format(d.replace("/", "_")),
+        srcs = glob(["include/{}/**".format(d)]),
+        visibility = ["//visibility:public"],
+    )
+    for d in [
+        "__algorithm",
+        "__atomic",
+        "__bit",
+        "__charconv",
+        "__chrono",
+        "__compare",
+        "__concepts",
+        "__condition_variable",
+        "__configuration",
+        "__coroutine",
+        "__cstddef",
+        "__cxx03",
+        "__debug_utils",
+        "__exception",
+        "__expected",
+        "__filesystem",
+        "__flat_map",
+        "__flat_set",
+        "__format",
+        "__functional",
+        "__fwd",
+        "__ios",
+        "__iterator",
+        "__locale_dir",
+        "__math",
+        "__mdspan",
+        "__memory_resource",
+        "__memory",
+        "__mutex",
+        "__new",
+        "__numeric",
+        "__ostream",
+        "__pstl",
+        "__random",
+        "__ranges",
+        "__stop_token",
+        "__string",
+        "__support",
+        "__system_error",
+        "__thread",
+        "__tuple",
+        "__type_traits",
+        "__utility",
+        "__variant",
+        "__vector",
+        "experimental",
+        "experimental/__simd",
+        "ext",
+    ]
+]
+
+filegroup(
+    name = "top_level_headers",
+    srcs = glob(
+        [
+            "include/*",
+        ],
+        exclude = [
+            "include/**/CMakeLists.txt",
+            "include/__config_site.in",
+        ],
+    ) + [
+        ":__assertion_handler_gen",
+        ":__config_site_gen",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "headers",
+    hdrs = glob(
+        [
+            "include/**/*",
+            "src/include/**/*",
+        ],
+        exclude = [
+            "include/**/CMakeLists.txt",
+            "include/__config_site.in",
+        ],
+    ) + [
+        ":__assertion_handler_gen",
+        ":__config_site_gen",
+    ],
+    includes = [
+        "include",
+        "src",
+        "src/include",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob(["src/**/*"]),
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "c++",
+    srcs = [
+        "src/algorithm.cpp",
+        "src/any.cpp",
+        "src/bind.cpp",
+        "src/call_once.cpp",
+        "src/charconv.cpp",
+        "src/chrono.cpp",
+        "src/error_category.cpp",
+        "src/exception.cpp",
+        "src/filesystem/filesystem_clock.cpp",
+        "src/filesystem/filesystem_error.cpp",
+        "src/filesystem/path.cpp",
+        "src/functional.cpp",
+        "src/hash.cpp",
+        "src/memory.cpp",
+        "src/memory_resource.cpp",
+        "src/new_handler.cpp",
+        "src/new_helpers.cpp",
+        "src/optional.cpp",
+        "src/print.cpp",
+        "src/random_shuffle.cpp",
+        "src/ryu/d2fixed.cpp",
+        "src/ryu/d2s.cpp",
+        "src/ryu/f2s.cpp",
+        "src/stdexcept.cpp",
+        "src/string.cpp",
+        "src/system_error.cpp",
+        "src/typeinfo.cpp",
+        "src/valarray.cpp",
+        "src/variant.cpp",
+        "src/vector.cpp",
+        "src/verbose_abort.cpp",
+
+        # Threads support.
+        "src/atomic.cpp",
+        "src/barrier.cpp",
+        "src/condition_variable_destructor.cpp",
+        "src/condition_variable.cpp",
+        "src/future.cpp",
+        "src/mutex_destructor.cpp",
+        "src/mutex.cpp",
+        "src/shared_mutex.cpp",
+        "src/thread.cpp",
+
+        # Random device support.
+        "src/random.cpp",
+
+        # Localization support.
+        "src/ios.cpp",
+        "src/ios.instantiations.cpp",
+        "src/iostream.cpp",
+        "src/locale.cpp",
+        "src/regex.cpp",
+        "src/strstream.cpp",
+
+        # Filesystem support.
+        "src/filesystem/directory_entry.cpp",
+        "src/filesystem/directory_iterator.cpp",
+        "src/filesystem/operations.cpp",
+
+        # "src/new.cpp",  # We pull this from libcxxabi for now.
+    ],
+    hdrs = [
+        # Files in src/include.
+        "src/include/apple_availability.h",
+        "src/include/atomic_support.h",
+        "src/include/config_elast.h",
+        "src/include/refstring.h",
+        "src/include/ryu/common.h",
+        "src/include/ryu/d2fixed.h",
+        "src/include/ryu/d2fixed_full_table.h",
+        "src/include/ryu/d2s.h",
+        "src/include/ryu/d2s_full_table.h",
+        "src/include/ryu/d2s_intrinsics.h",
+        "src/include/ryu/digit_table.h",
+        "src/include/ryu/f2s.h",
+        "src/include/ryu/ryu.h",
+        "src/include/to_chars_floating_point.h",
+
+        # Filesystem files.
+        "src/filesystem/error.h",  # Not in CMake.
+        "src/filesystem/file_descriptor.h",
+        "src/filesystem/format_string.h",  # Not in CMake.
+        "src/filesystem/path_parser.h",
+        "src/filesystem/posix_compat.h",
+        "src/filesystem/time_utils.h",
+
+        # Support ipp files.
+        "src/support/runtime/exception_fallback.ipp",
+        "src/support/runtime/exception_glibcxx.ipp",
+        "src/support/runtime/exception_libcxxabi.ipp",
+        "src/support/runtime/exception_libcxxrt.ipp",
+        "src/support/runtime/exception_msvc.ipp",
+        "src/support/runtime/exception_pointer_cxxabi.ipp",
+        "src/support/runtime/exception_pointer_glibcxx.ipp",
+        "src/support/runtime/exception_pointer_msvc.ipp",
+        "src/support/runtime/exception_pointer_unimplemented.ipp",
+        "src/support/runtime/stdexcept_default.ipp",
+        "src/support/runtime/stdexcept_vcruntime.ipp",
+
+        # Headers for building iostream.
+        "src/include/sso_allocator.h",
+        "src/iostream_init.h",
+        "src/std_stream.h",
+
+        # This seems to be forgotten in CMake.
+        "src/memory_resource_init_helper.h",
+    ] + LIBCXX_MODULE_STD_INCLUDE_SOURCES_FILES,
+    copts = [
+        "-std=c++2b",
+        "-faligned-allocation",
+        "-fno-omit-frame-pointer",
+        "-funwind-tables",
+        "-fstrict-aliasing",
+        "-fvisibility-inlines-hidden",
+        "-Wno-user-defined-literals",
+        "-Wno-reserved-module-identifier",
+
+        # TODO: Remove this after resolve of
+        # https://github.com/llvm/llvm-project/issues/62844
+        "-Wno-deprecated-declarations",
+        "-nostdinc++",
+    ],
+    defines = [
+        "_LIBCPP_BUILDING_LIBRARY",
+        "_LIBCPP_ENABLE_EXPERIMENTAL",
+        "_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER",
+        "_LIBCPP_LINK_PTHREAD_LIB",
+        "_LIBCPP_LINK_RT_LIB",
+        "_LIBCPP_REMOVE_TRANSITIVE_INCLUDES",
+        "_LIBCXXABI_BUILDING_LIBRARY",
+        "LIBCXX_BUILDING_LIBCXXABI",
+    ],
+    features = [
+        "-libc++",
+        "-libstdc++",
+    ],
+    includes = [
+        "include",  # Used for modules which are included as `modules/std/...`.
+        "src",
+        "src/include",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@llvm-project//libc:libcxx_shared_headers",
+        "@llvm-project//libcxxabi:c++abi",
+    ],
+)

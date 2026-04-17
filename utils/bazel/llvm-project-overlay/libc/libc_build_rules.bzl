@@ -53,10 +53,12 @@ def _libc_library(name, **kwargs):
     for attr in ["copts", "local_defines"]:
         if attr in kwargs:
             fail("disallowed attribute: '{}' in rule: '{}'".format(attr, name))
+    defines = kwargs.pop("defines", [])
     cc_library(
         name = name,
         copts = libc_common_copts(),
         local_defines = LIBC_CONFIGURE_OPTIONS,
+        defines = defines + ["LIBC_NAMESPACE=" + LIBC_NAMESPACE],
         linkstatic = 1,
         **kwargs
     )

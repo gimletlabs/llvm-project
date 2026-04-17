@@ -10,6 +10,7 @@ is discoverable with the following command:
 
 > git grep -hoE '\bLIBC_COPT_\\w*'  -- '*.h' '*.cpp' | sort -u
 """
+load("//libc:libc_namespace.bzl", "LIBC_NAMESPACE")
 
 # This list of definitions is used to customize LLVM libc.
 LIBC_CONFIGURE_OPTIONS = [

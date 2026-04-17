@@ -2586,3 +2586,9 @@ cc_library(
         "//llvm:TargetParser",
     ],
 )
+
+filegroup(
+    name = "headers",
+    srcs = glob(["lib/Headers/*.h"]),
+    visibility = ["//visibility:public"],
+)
