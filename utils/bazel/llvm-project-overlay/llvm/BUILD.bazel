@@ -5,10 +5,6 @@
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
-load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_python//python:defs.bzl", "py_binary")
-load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//mlir:tblgen.bzl", "gentbl_cc_library", "gentbl_filegroup", "td_library")
 load(":binary_alias.bzl", "binary_alias")
 load(":config.bzl", "llvm_config_defines")
@@ -234,19 +230,19 @@ write_file(
 config_setting(
     name = "is_windows_clang_mingw",
     constraint_values = ["@platforms//os:windows"],
-    flag_values = {"@rules_cc//cc/compiler:compiler": "clang"},
+    flag_values = {"@bazel_tools//tools/cpp:compiler": "clang"},
 )
 
 config_setting(
     name = "is_windows_clang_cl",
     constraint_values = ["@platforms//os:windows"],
-    flag_values = {"@rules_cc//cc/compiler:compiler": "clang-cl"},
+    flag_values = {"@bazel_tools//tools/cpp:compiler": "clang-cl"},
 )
 
 config_setting(
     name = "is_windows_msvc",
     constraint_values = ["@platforms//os:windows"],
-    flag_values = {"@rules_cc//cc/compiler:compiler": "msvc-cl"},
+    flag_values = {"@bazel_tools//tools/cpp:compiler": "msvc-cl"},
 )
 
 config_setting(
@@ -255,7 +251,7 @@ config_setting(
         "@platforms//cpu:x86_64",
         "@platforms//os:windows",
     ],
-    flag_values = {"@rules_cc//cc/compiler:compiler": "clang"},
+    flag_values = {"@bazel_tools//tools/cpp:compiler": "clang"},
 )
 
 BLAKE3_x86_64_ASM_SOURCE_PATTERNS = [

@@ -17,9 +17,6 @@ cc_library_wrapper(
 )
 """
 
-load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
-load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
-
 visibility("private")
 
 def _cc_library_wrapper_impl(ctx):
