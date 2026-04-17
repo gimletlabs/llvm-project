@@ -9741,12 +9741,12 @@ def note_cuda_conflicting_device_function_declared_here : Note<
 def err_cuda_device_exceptions : Error<
   "cannot use '%0' in "
   "%select{__device__|__global__|__host__|__host__ __device__}1 function">;
-def err_dynamic_var_init : Error<
+def warn_dynamic_var_init : Warning<
     "dynamic initialization is not supported for "
     "__device__, __constant__, __shared__, and __managed__ variables">;
 def err_cuda_ctor_dtor_attrs
     : Error<"CUDA does not support global %0 for __device__ functions">;
-def err_shared_var_init : Error<
+def warn_shared_var_init : Warning<
     "initialization is not supported for __shared__ variables">;
 def err_cuda_vla : Error<
     "cannot use variable-length arrays in "

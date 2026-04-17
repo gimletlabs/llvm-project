@@ -1745,6 +1745,9 @@ def CudaCompat : DiagGroup<"cuda-compat">;
 // Warning about unknown CUDA SDK version.
 def CudaUnknownVersion: DiagGroup<"unknown-cuda-version">;
 
+// A warning group equivalent to nvcc's static_var_with_dynamic_init diag.
+def CudaStaticVarWithDynamicInit : DiagGroup<"cuda-static-var-with-dynamic-init">;
+
 // A warning group for warnings about features supported by HIP but
 // ignored by CUDA.
 def HIPOnly : DiagGroup<"hip-only">;

@@ -784,9 +784,8 @@ void SemaCUDA::checkAllowedInitializer(VarDecl *VD) {
             *this, VD, IsSharedVar ? CICK_Shared : CICK_DeviceOrConstant))
       return;
     Diag(VD->getLocation(),
-         IsSharedVar ? diag::err_shared_var_init : diag::err_dynamic_var_init)
+         IsSharedVar ? diag::warn_shared_var_init : diag::warn_dynamic_var_init)
         << Init->getSourceRange();
-    VD->setInvalidDecl();
   } else {
     // This is a host-side global variable.  Check that the initializer is
     // callable from the host side.
