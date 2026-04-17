@@ -1211,6 +1211,9 @@ public:
   /// the full module.
   OpPrintingFlags &useLocalScope(bool enable = true);
 
+  /// Force printing as if this op were at the top level.
+  OpPrintingFlags &forceTopLevel();
+
   /// Print users of values as comments.
   OpPrintingFlags &printValueUsers(bool enable = true);
 
@@ -1264,6 +1267,9 @@ public:
   /// IDs
   bool shouldUseNameLocAsPrefix() const;
 
+  /// Return if the printer should force top level printing.
+  bool shouldForceTopLevel() const;
+
 private:
   /// Elide large elements attributes if the number of elements is larger than
   /// the upper limit.
@@ -1300,6 +1306,8 @@ private:
 
   /// Print SSA IDs using NameLocs as prefixes
   bool useNameLocAsPrefix : 1;
+
+  bool printForceTopLevel : 1;
 };
 
 //===----------------------------------------------------------------------===//
