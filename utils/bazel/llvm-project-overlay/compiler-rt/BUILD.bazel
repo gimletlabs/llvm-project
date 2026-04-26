@@ -809,6 +809,7 @@ cc_library(
     name = "clang_rt.tsan",
     srcs = [
         # TSAN_SOURCES.
+        "lib/tsan/rtl/tsan_adaptive_delay.cpp",
         "lib/tsan/rtl/tsan_debugging.cpp",
         "lib/tsan/rtl/tsan_external.cpp",
         "lib/tsan/rtl/tsan_fd.cpp",
