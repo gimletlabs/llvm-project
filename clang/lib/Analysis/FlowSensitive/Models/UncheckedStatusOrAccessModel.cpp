@@ -476,8 +476,12 @@ llvm::StringMap<QualType> getSyntheticFields(QualType Ty, QualType StatusType,
                                              const CXXRecordDecl &RD) {
   if (auto *TRD = getStatusOrBaseClass(Ty))
     return {{"status", StatusType}, {"value", getStatusOrValueType(TRD)}};
-  if (isStatusType(Ty) || (RD.hasDefinition() &&
-                           RD.isDerivedFrom(StatusType->getAsCXXRecordDecl())))
+  // findStatusType returns a null QualType when absl::Status is not in the
+  // TU's known types; guard before dereferencing.
+  const CXXRecordDecl *StatusRD =
+      StatusType.isNull() ? nullptr : StatusType->getAsCXXRecordDecl();
+  if (isStatusType(Ty) || (StatusRD != nullptr && RD.hasDefinition() &&
+                           RD.isDerivedFrom(StatusRD)))
     return {{"ok", RD.getASTContext().BoolTy}};
   if (isAssertionResultType(Ty))
     return {{"ok", RD.getASTContext().BoolTy}};

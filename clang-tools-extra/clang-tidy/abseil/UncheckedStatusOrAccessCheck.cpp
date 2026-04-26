@@ -47,6 +47,12 @@ void UncheckedStatusOrAccessCheck::check(
   if (FuncDecl->isTemplated())
     return;
 
+  // If absl::Status isn't visible to the AST, the model can't initialize the
+  // synthetic "status"/"ok" fields it needs and will crash later in transfer.
+  // Bail rather than half-initialize.
+  if (dataflow::statusor_model::findStatusType(*Result.Context).isNull())
+    return;
+
   UncheckedStatusOrAccessDiagnoser Diagnoser;
   if (llvm::Expected<SmallVector<SourceLocation>> Locs =
           dataflow::diagnoseFunction<UncheckedStatusOrAccessModel,
