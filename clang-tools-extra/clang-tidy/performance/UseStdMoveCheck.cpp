@@ -29,7 +29,10 @@ AST_MATCHER(CXXRecordDecl, hasAccessibleNonTrivialMoveAssignment) {
   for (const auto *CM : Node.methods())
     if (CM->isMoveAssignmentOperator())
       return !CM->isDeleted() && CM->getAccess() == AS_public;
-  llvm_unreachable("Move Assignment Operator Not Found");
+  // The class has a non-trivial move-assignment operator that hasn't been
+  // declared yet (implicit, not lazily declared by Sema during this AST walk).
+  // Be conservative and skip: we can't introspect access/deletion status here.
+  return false;
 }
 
 AST_MATCHER(QualType, isLValueReferenceType) {
