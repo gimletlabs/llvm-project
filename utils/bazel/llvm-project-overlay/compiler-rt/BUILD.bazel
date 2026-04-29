@@ -11,6 +11,12 @@ package(
 
 licenses(["notice"])
 
+# Prevent clang from optimizing the insides of internal_strlen etc in
+# sanitizer_libc.cpp to call strlen. Such an optimization ends up calling the
+# sanitizer interceptor causing a infinite loop.
+# This copt is set in CMake but missing here.
+SANITIZER_COMMON_COPTS = ["-fno-builtin"]
+
 filegroup(
     name = "fuzzer_hdrs",
     srcs = glob(["include/fuzzer/*"]),
@@ -143,6 +149,7 @@ cc_library(
         ":sanitizer_impl_headers",
         ":ubsan_headers",
     ],
+    copts = SANITIZER_COMMON_COPTS,
     includes = ["lib"],
     linkstatic = True,
     visibility = ["//visibility:public"],
@@ -584,6 +591,7 @@ cc_library(
         ":lsan_headers",
         ":sanitizer_impl_headers",
     ],
+    copts = SANITIZER_COMMON_COPTS,
     includes = ["lib"],
     linkstatic = True,
     visibility = ["//visibility:public"],
@@ -632,6 +640,7 @@ cc_library(
         ":sanitizer_impl_headers",
         ":ubsan_headers",
     ],
+    copts = SANITIZER_COMMON_COPTS,
     includes = ["lib"],
     linkstatic = True,
     visibility = ["//visibility:public"],
@@ -860,6 +869,7 @@ cc_library(
         ":tsan_headers",
         ":ubsan_headers",
     ],
+    copts = SANITIZER_COMMON_COPTS,
     includes = ["lib"],
     linkstatic = True,
     visibility = ["//visibility:public"],
@@ -952,6 +962,7 @@ cc_library(
         ":sanitizer_impl_headers",
         ":ubsan_headers",
     ],
+    copts = SANITIZER_COMMON_COPTS,
     includes = ["lib"],
     linkstatic = True,
     visibility = ["//visibility:public"],
