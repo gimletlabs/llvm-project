@@ -515,6 +515,13 @@ private:
   struct BlockInfo {
     std::unique_ptr<WaitcntBrackets> Incoming;
     bool Dirty = true;
+
+    BlockInfo();
+    ~BlockInfo();
+    BlockInfo(BlockInfo &&) noexcept;
+    BlockInfo &operator=(BlockInfo &&) noexcept;
+    BlockInfo(const BlockInfo &) = delete;
+    BlockInfo &operator=(const BlockInfo &) = delete;
   };
 
   MapVector<MachineBasicBlock *, BlockInfo> BlockInfos;
@@ -1005,6 +1012,12 @@ private:
   // mark yet. Initialized to all zeros.
   CounterValueArray AsyncScore{};
 };
+
+SIInsertWaitcnts::BlockInfo::BlockInfo() = default;
+SIInsertWaitcnts::BlockInfo::~BlockInfo() = default;
+SIInsertWaitcnts::BlockInfo::BlockInfo(BlockInfo &&) noexcept = default;
+SIInsertWaitcnts::BlockInfo &
+SIInsertWaitcnts::BlockInfo::operator=(BlockInfo &&) noexcept = default;
 
 class SIInsertWaitcntsLegacy : public MachineFunctionPass {
 public:

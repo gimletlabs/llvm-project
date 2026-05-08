@@ -1097,6 +1097,7 @@ cc_library(
 PYBIND11_COPTS = [
     "-fexceptions",
     "-frtti",
+    "-std=c++20",
 ]
 
 PYBIND11_FEATURES = [
