@@ -127,7 +127,7 @@ CGUseList::CGUseList(Operation *op, CallGraph &cg,
                      SymbolTableCollection &symbolTable)
     : symbolTable(symbolTable) {
   /// A set of callgraph nodes that are always known to be live during inlining.
-  DenseMap<Attribute, CallGraphNode *> alwaysLiveNodes;
+  DenseSet<CallGraphNode *> alwaysLiveNodes;
 
   // Walk each of the symbol tables looking for discardable callgraph nodes.
   auto walkFn = [&](Operation *symbolTableOp, bool allUsesVisible) {
@@ -144,16 +144,21 @@ CGUseList::CGUseList(Operation *op, CallGraph &cg,
         }
       }
       // Otherwise, check for any referenced nodes. These will be always-live.
-      walkReferencedSymbolNodes(&op, cg, symbolTable, alwaysLiveNodes,
-                                [](CallGraphNode *, Operation *) {});
+      // Keep symbol resolution scoped to this operation. The same flat symbol
+      // ref can refer to different callgraph nodes in sibling symbol tables.
+      DenseMap<Attribute, CallGraphNode *> resolvedRefs;
+      walkReferencedSymbolNodes(&op, cg, symbolTable, resolvedRefs,
+                                [&](CallGraphNode *node, Operation *) {
+                                  alwaysLiveNodes.insert(node);
+                                });
     }
   };
   SymbolTable::walkSymbolTables(op, /*allSymUsesVisible=*/!op->getBlock(),
                                 walkFn);
 
   // Drop the use information for any discardable nodes that are always live.
-  for (auto &it : alwaysLiveNodes)
-    discardableSymNodeUses.erase(it.second);
+  for (CallGraphNode *node : alwaysLiveNodes)
+    discardableSymNodeUses.erase(node);
 
   // Compute the uses for each of the callable nodes in the graph.
   for (CallGraphNode *node : cg)
