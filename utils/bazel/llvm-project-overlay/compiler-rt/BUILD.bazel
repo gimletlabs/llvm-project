@@ -153,6 +153,7 @@ cc_library(
     includes = ["lib"],
     linkstatic = True,
     visibility = ["//visibility:public"],
+    deps = [":clang_rt.builtins"],
 )
 
 cc_library(
@@ -388,7 +389,7 @@ X86_80_BIT_SOURCES = [
     "lib/builtins/trunctfxf2.c",
 ]
 
-X86_64_SOURCES = GENERIC_SOURCES + GENERIC_TF_SOURCES + X86_ARCH_SOURCES + X86_80_BIT_SOURCES + [
+X86_64_SOURCES = X86_ARCH_SOURCES + X86_80_BIT_SOURCES + [
     "lib/builtins/x86_64/floatdidf.c",
     "lib/builtins/x86_64/floatdisf.c",
     "lib/builtins/x86_64/floatundidf.S",
@@ -426,20 +427,36 @@ BUILTINS_HEADERS = [
 
 cc_library(
     name = "builtins",
-    srcs = X86_64_SOURCES,
+    srcs = GENERIC_SOURCES + GENERIC_TF_SOURCES + select({
+        "@platforms//cpu:x86_64": X86_64_SOURCES,
+        "@platforms//cpu:aarch64": [":builtins_aarch64_srcs"],
+        "//conditions:default": [],
+    }),
     hdrs = BUILTINS_HEADERS,
-    includes = ["lib"],
+    includes = ["lib", "lib/builtins"],
     linkstatic = True,
     visibility = ["//visibility:public"],
+    deps = select({
+        "@platforms//cpu:aarch64": ["@llvm-project//third-party/siphash:siphash"],
+        "//conditions:default": [],
+    }),
 )
 
 cc_library(
     name = "clang_rt.builtins",
-    srcs = X86_64_SOURCES,
+    srcs = GENERIC_SOURCES + GENERIC_TF_SOURCES + select({
+        "@platforms//cpu:x86_64": X86_64_SOURCES,
+        "@platforms//cpu:aarch64": [":builtins_aarch64_srcs"],
+        "//conditions:default": [],
+    }),
     hdrs = BUILTINS_HEADERS,
-    includes = ["lib"],
+    includes = ["lib", "lib/builtins"],
     linkstatic = True,
     visibility = ["//visibility:public"],
+    deps = select({
+        "@platforms//cpu:aarch64": ["@llvm-project//third-party/siphash:siphash"],
+        "//conditions:default": [],
+    }),
 )
 
 cc_library(
@@ -595,6 +612,7 @@ cc_library(
     includes = ["lib"],
     linkstatic = True,
     visibility = ["//visibility:public"],
+    deps = [":clang_rt.builtins"],
 )
 
 filegroup(
@@ -644,6 +662,7 @@ cc_library(
     includes = ["lib"],
     linkstatic = True,
     visibility = ["//visibility:public"],
+    deps = [":clang_rt.builtins"],
 )
 
 cc_library(
@@ -873,6 +892,7 @@ cc_library(
     includes = ["lib"],
     linkstatic = True,
     visibility = ["//visibility:public"],
+    deps = [":clang_rt.builtins"],
 )
 
 cc_library(
@@ -966,6 +986,7 @@ cc_library(
     includes = ["lib"],
     linkstatic = True,
     visibility = ["//visibility:public"],
+    deps = [":clang_rt.builtins"],
 )
 
 cc_library(
