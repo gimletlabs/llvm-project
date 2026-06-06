@@ -307,6 +307,7 @@ cc_library(
         "src/chrono.cpp",
         "src/error_category.cpp",
         "src/exception.cpp",
+        "src/expected.cpp",
         "src/filesystem/filesystem_clock.cpp",
         "src/filesystem/filesystem_error.cpp",
         "src/filesystem/path.cpp",
@@ -350,6 +351,7 @@ cc_library(
         "src/ios.instantiations.cpp",
         "src/iostream.cpp",
         "src/locale.cpp",
+        "src/ostream.cpp",
         "src/regex.cpp",
         "src/strstream.cpp",
 
